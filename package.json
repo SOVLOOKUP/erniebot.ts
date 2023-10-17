@@ -1,0 +1,9 @@
+{
+    "name": "erniebot.ts",
+    "type": "module",
+    "dependencies": {
+        "streaming-iterables": "^8.0.1",
+        "zod": "^3.22.4",
+        "zod-to-json-schema": "^3.21.4"
+    }
+}
