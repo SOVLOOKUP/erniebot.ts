@@ -1,16 +1,14 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { FuncInput, MFunc, ModelRes, msg } from "./types"
+import { FuncInput, Json, MFunc, ModelRes, msg } from "./types"
 import { filter, transform } from "streaming-iterables"
 
-export const mkFunc = <Args extends z.ZodTuple<any, any>, Returns extends z.ZodTypeAny>(func: FuncInput<Args, Returns>) => {
-    const parm = func.func.parameters()
-    const rtns = func.func.returnType()
+export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
     return {
         name: func.name,
         description: func.description,
-        parameters: parm._def.items.length === 0 ? { "type": "object", "properties": {} } : zodToJsonSchema(parm),
-        responses: parm._def.items.length === 0 ? undefined : zodToJsonSchema(rtns),
+        parameters: zodToJsonSchema(func.input),
+        responses: zodToJsonSchema(func.output),
         examples: func.examples,
     }
 }

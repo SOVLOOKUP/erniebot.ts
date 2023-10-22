@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { MFunc, FuncInput } from "./types"
+import { MFunc, FuncInput, Json } from "./types"
 import { mkFunc, login } from "./utils"
 
 export class FunctionManager {
@@ -8,7 +8,7 @@ export class FunctionManager {
         this.#store = new Map<string, MFunc>()
     }
     funcsIter: () => IterableIterator<MFunc> | AsyncIterableIterator<MFunc> = () => this.#store.values()
-    addFunc: <Args extends z.ZodTuple<any, any>, Returns extends z.ZodTypeAny>(func: FuncInput<Args, Returns>) => void | Promise<void> = (func) => {
+    addFunc: <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => void | Promise<void> = (func) => {
         this.#store.set(func.name, mkFunc(func))
     }
     delFunc: (name: string) => boolean | Promise<boolean> = (name) => this.#store.delete(name)

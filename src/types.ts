@@ -3,7 +3,7 @@ import { mkFunc } from "./utils";
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 type Literal = z.infer<typeof literalSchema>;
-type Json = Literal | { [key: string]: Json } | Json[];
+export type Json = Literal | { [key: string]: Json } | Json[];
 const jsonSchema: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]));
 
 const funcCall = z.object({ name: z.string(), arguments: jsonSchema, thoughts: z.string().optional() })
@@ -53,10 +53,12 @@ export interface ModelRes {
     }
 }
 
-export interface FuncInput<Args extends z.ZodTuple<any, any>, Returns extends z.ZodTypeAny> {
+export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>> {
     name: string
     description: string
-    func: z.ZodFunction<Args, Returns>
+    input: Args
+    output: Returns
+    func: z.infer<z.ZodFunction<z.ZodTuple<[Args]>, Returns>>,
     examples?: z.infer<typeof msg>[]
 }
 
