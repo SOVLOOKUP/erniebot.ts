@@ -5,12 +5,19 @@ import { sendAsk } from "./utils"
 import { FunctionManager, TokenManager } from "./baseManager"
 
 export interface Opt {
+    // 会话key，即文心应用 key
     key: string,
+    // 会话密钥，即文心应用密钥
     secret?: string,
+    // 函数管理器
     functionManager?: FunctionManager,
+    // token管理器
     tokenManager?: TokenManager,
+    // 最大上下文容量 默认3
     contextSize?: number,
+    // 每个问题结束时的回调
     onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
+    // 是否使用 4.0 模型 默认是
     proModel?: boolean
 }
 
