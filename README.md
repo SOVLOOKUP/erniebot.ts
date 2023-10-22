@@ -2,7 +2,7 @@
 
 ## 入参
 
-1. 
+https://github.com/SOVLOOKUP/erniebot.ts/blob/main/src/index.ts#L7
 
 ## todo
 
