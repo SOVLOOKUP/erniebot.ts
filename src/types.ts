@@ -6,7 +6,7 @@ type Literal = z.infer<typeof literalSchema>;
 export type Json = Literal | { [key: string]: Json } | Json[];
 const jsonSchema: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)]));
 
-const funcCall = z.object({ name: z.string(), arguments: jsonSchema, thoughts: z.string().optional() })
+export const funcCall = z.object({ name: z.string(), arguments: z.string(), thoughts: z.string() })
 
 export const userMsg = z.object({
     role: z.literal("user"),

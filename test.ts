@@ -17,18 +17,18 @@ await functionManager.addFunc({
     input: z.object({
         name: z.string()
     }),
-    output: z.object({ names: z.array(z.string()) }),
+    output: z.object({ names: z.array(z.string()).describe("网红的名字") }),
     func: () => ({ names: ["拜拜"] })
 })
 
 for await (const a of await session.ask("网红提莫的情况？")) {
-    // process.stdout.write(a)
+    console.log(a);
 }
 
-// for await (const a of await session.ask("那美国有吗呢？")) {
-//     process.stdout.write(a)
-// }
+for await (const a of await session.ask("中国全称？")) {
+    console.log(a);
+}
 
-// for await (const a of await session.ask("那英国呢？")) {
-//     process.stdout.write(a)
-// }
+for await (const a of await session.ask("那英国呢？")) {
+    console.log(a);
+}

@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { collect, transform } from "streaming-iterables"
-import { ModelRes, modelMsg, Msg, userMsg } from "./types"
+import { ModelRes, modelMsg, Msg, userMsg, funcCall, funcMsg, Json } from "./types"
 import { sendAsk } from "./utils"
 import { FunctionManager, TokenManager } from "./baseManager"
 
@@ -74,15 +74,38 @@ export class ModelSession {
         })
         return transform(Infinity, async (chunk) => {
             this.#context[this.#context.length - 1].content += chunk.result
+            let res: {
+                type: "chat",
+                msg: string
+            } | {
+                type: "func",
+                msg: { name: string, thoughts: string, result: { [x: string]: Json } },
+                say: () => Promise<AsyncIterableIterator<string>>
+            } = {
+                type: "chat",
+                msg: chunk.result
+            }
             if (chunk.is_end) {
-                // todo 触发函数调用
+                // 触发函数调用
                 if (chunk.function_call) {
-                    console.log(chunk);
-
+                    const name = chunk.function_call.name
+                    const thoughts = chunk.function_call.thoughts
+                    const args = JSON.parse(chunk.function_call.arguments)
+                    this.#context[this.#context.length - 1]["function_call"] = args
+                    const result = await this.#opt.functionManager.invokeFunc(name, args)
+                    res = {
+                        type: "func",
+                        msg: { name, thoughts, result },
+                        say: async () => transform<ModelRes, string>(Infinity, (chunk) => chunk.result, await sendAsk(token, this.#context.concat([<z.infer<typeof funcMsg>>{
+                            role: "function",
+                            name,
+                            content: JSON.stringify(result)
+                        }]), funcs, this.#opt.proModel))
+                    }
                 }
                 await this.#opt.onAskAns({ id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] })
             }
-            return chunk.result
+            return res
         }, res)
     }
 }
