@@ -77,6 +77,7 @@ export class ModelSession {
             if (chunk.is_end) {
                 // todo 触发函数调用
                 if (chunk.function_call) {
+                    console.log(chunk);
 
                 }
                 await this.#opt.onAskAns({ id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] })

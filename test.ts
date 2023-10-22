@@ -21,7 +21,7 @@ await functionManager.addFunc({
     func: () => ({ names: ["拜拜"] })
 })
 
-for await (const a of await session.ask("说说常见的网红")) {
+for await (const a of await session.ask("网红提莫的情况？")) {
     // process.stdout.write(a)
 }
 
