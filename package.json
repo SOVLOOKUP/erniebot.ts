@@ -1,0 +1,31 @@
+{
+    "name": "erniebot.ts",
+    "type": "module",
+    "scripts": {
+        "build": "tsup --cjsInterop"
+    },
+    "dependencies": {
+        "dotenv": "^16.3.1",
+        "streaming-iterables": "^8.0.1",
+        "zod": "^3.22.4",
+        "zod-to-json-schema": "^3.21.4"
+    },
+    "devDependencies": {
+        "@types/node": "^20.8.7",
+        "tsup": "^7.2.0",
+        "typescript": "^5.2.2"
+    },
+    "tsup": {
+        "entry": [
+            "src/index.ts"
+        ],
+        "format": [
+            "cjs",
+            "esm"
+        ],
+        "clean": true,
+        "dts": true,
+        "treeshake": true,
+        "shims": true
+    }
+}
