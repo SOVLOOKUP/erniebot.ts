@@ -6,30 +6,34 @@ import { FunctionManager, TokenManager } from "./baseManager"
 
 export interface Opt {
     key: string,
+    secret?: string,
+    functionManager?: FunctionManager,
+    tokenManager?: TokenManager,
     contextSize?: number,
     onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
     proModel?: boolean
 }
 
 export class ModelSession {
-    #fm: FunctionManager
-    #tm: TokenManager
     #context: Msg[] = []
     #opt: Required<Opt>
-    constructor(
-        opt: Opt,
-        fm: FunctionManager,
-        tm: TokenManager
-    ) {
-        this.#fm = fm
-        this.#tm = tm
+    constructor(opt: Opt, resolve: (value: ModelSession) => void, reject: (reason?: any) => void) {
+        this.#init(opt).then(resolve).catch(reject)
+    }
+    #init = async (opt: Opt) => {
         opt.contextSize = opt.contextSize ?? 3
-        opt.onAskAns = opt.onAskAns ?? (() => { })
-        opt.proModel = opt.proModel ?? true
         if (!(opt.contextSize >= 1 && opt.contextSize % 2 === 1)) {
             throw new Error("上下文容量必须为正奇数")
         }
+        opt.onAskAns = opt.onAskAns ?? (() => { })
+        opt.proModel = opt.proModel ?? true
+        opt.tokenManager = opt.tokenManager ?? new TokenManager()
+        if (opt.secret) {
+            await opt.tokenManager.login(opt.key, opt.secret)
+        }
+        opt.functionManager = opt.functionManager ?? new FunctionManager()
         this.#opt = opt as Required<Opt>
+        return this
     }
     ask = async (msg: string) => {
         // 记录问题
@@ -42,9 +46,9 @@ export class ModelSession {
             this.#context = this.#context.slice(this.#context.length - this.#opt.contextSize, this.#context.length)
         }
         // 获取 token
-        const token = await this.#tm.get(this.#opt.key)
+        const token = await this.#opt.tokenManager.get(this.#opt.key)
         // 获取 funcs
-        const funcs = await collect(this.#fm.funcsIter())
+        const funcs = await collect(this.#opt.functionManager.funcsIter())
         let res: AsyncIterableIterator<ModelRes>
         // 发送问题
         if (token) {
@@ -71,10 +75,7 @@ export class ModelSession {
     }
 }
 
-export const newBaseSession = async (key: string, secret: string) => {
-    const tm = new TokenManager()
-    await tm.login(key, secret)
-    const fm = new FunctionManager()
-    const ms = new ModelSession({ key }, fm, tm,)
-    return { fm, tm, ms }
-}
+export const newSession = async (opt: Opt) => new Promise<ModelSession>((resolve, reject) => new ModelSession(opt, resolve, reject))
+export * from "./baseManager"
+export * from "./utils"
+export * from "./types"
