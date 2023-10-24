@@ -1,0 +1,33 @@
+name: CI
+"on":
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - "**"
+    paths-ignore:
+      - "**/*.md"
+      - LICENSE
+      - "**/*.gitignore"
+      - .editorconfig
+      - docs/**
+      - test.ts
+  pull_request: null
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: 8
+      - run: pnpm build
+      - name: Set publishing config
+        run: pnpm config set '//registry.npmjs.org/:_authToken' "${NODE_AUTH_TOKEN}"
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+      - name: Publish
+        run: |
+          pnpm publish --access public --no-git-checks

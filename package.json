@@ -1,6 +1,10 @@
 {
     "name": "erniebot.ts",
     "type": "module",
+    "version": "0.0.1",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsup --cjsInterop"
     },
@@ -27,5 +31,9 @@
         "dts": true,
         "treeshake": true,
         "shims": true
-    }
+    },
+    "files": [
+        "dist/",
+        "README.md"
+    ]
 }

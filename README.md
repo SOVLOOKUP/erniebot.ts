@@ -4,6 +4,6 @@
 
 https://github.com/SOVLOOKUP/erniebot.ts/blob/main/src/index.ts#L7
 
-## todo
+## 用法
 
-1. 支持函数调用
+查看 https://github.com/SOVLOOKUP/erniebot.ts/blob/main/test.ts
