@@ -76,31 +76,38 @@ export class ModelSession {
             this.#context[this.#context.length - 1].content += chunk.result
             let res: {
                 type: "chat",
-                msg: string
-            } | {
-                type: "func",
-                msg: { name: string, thoughts: string, result: { [x: string]: Json } },
-                say: () => Promise<AsyncIterableIterator<string>>
-            } = {
+                content: string
+            } | { type: "func", name: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterableIterator<string>> }> } = {
                 type: "chat",
-                msg: chunk.result
+                content: chunk.result
             }
             if (chunk.is_end) {
                 // 触发函数调用
                 if (chunk.function_call) {
                     const name = chunk.function_call.name
-                    const thoughts = chunk.function_call.thoughts
                     const args = JSON.parse(chunk.function_call.arguments)
                     this.#context[this.#context.length - 1]["function_call"] = args
-                    const result = await this.#opt.functionManager.invokeFunc(name, args)
                     res = {
                         type: "func",
-                        msg: { name, thoughts, result },
-                        say: async () => transform<ModelRes, string>(Infinity, (chunk) => chunk.result, await sendAsk(token, this.#context.concat([<z.infer<typeof funcMsg>>{
-                            role: "function",
-                            name,
-                            content: JSON.stringify(result)
-                        }]), funcs, this.#opt.proModel))
+                        name,
+                        args,
+                        exec: async () => {
+                            const result = await this.#opt.functionManager.invokeFunc(name, args)
+                            return {
+                                result,
+                                say: async () =>
+                                    transform<ModelRes, string>(Infinity,
+                                        (chunk) => chunk.result,
+                                        await sendAsk(token,
+                                            this.#context.concat([<z.infer<typeof funcMsg>>{
+                                                role: "function",
+                                                name,
+                                                content: JSON.stringify(result)
+                                            }]), funcs, this.#opt.proModel)
+                                    )
+                            }
+                        },
+
                     }
                 }
                 await this.#opt.onAskAns({ id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] })

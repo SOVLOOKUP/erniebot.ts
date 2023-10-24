@@ -22,13 +22,20 @@ await functionManager.addFunc({
 })
 
 for await (const a of await session.ask("网红提莫的情况？")) {
-    console.log(a);
+    // console.log(a);
+    if (a.type === "func") {
+        const res = await a.exec()
+        for await (const s of await res.say()) {
+            console.log(s);
+
+        }
+    }
 }
 
-for await (const a of await session.ask("中国全称？")) {
-    console.log(a);
-}
+// for await (const a of await session.ask("中国全称？")) {
+//     console.log(a);
+// }
 
-for await (const a of await session.ask("那英国呢？")) {
-    console.log(a);
-}
+// for await (const a of await session.ask("那英国呢？")) {
+//     console.log(a);
+// }
