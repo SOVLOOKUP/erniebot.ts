@@ -22,7 +22,7 @@ export interface Opt {
 export type ModelReturn = {
     type: "chat",
     content: string
-} | { type: "func", name: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterableIterator<string>> }> }
+} | { type: "func", name: string, thoughts: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterableIterator<string>> }> }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 type Literal = z.infer<typeof literalSchema>;
@@ -79,8 +79,8 @@ export interface ModelRes {
 export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>> {
     name: string
     description: string
-    input: Args
-    output: Returns
+    input?: Args
+    output?: Returns
     func: z.infer<z.ZodFunction<z.ZodTuple<[Args]>, Returns>>,
     examples?: z.infer<typeof msg>[]
 }

@@ -76,6 +76,7 @@ export class ModelSession {
                         type: "func",
                         name,
                         args,
+                        thoughts: chunk.function_call.thoughts,
                         exec: async () => {
                             const result = await this.#opt.functionManager.invokeFunc(name, args)
                             return {

@@ -4,11 +4,12 @@ import { FuncInput, Json, MFunc, ModelRes, msg } from "./types"
 import { filter, transform } from "streaming-iterables"
 
 export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
+    func.input = func.input ?? z.object({}) as Args
     return {
         name: func.name,
         description: func.description,
         parameters: zodToJsonSchema(func.input),
-        responses: zodToJsonSchema(func.output),
+        responses: func.output ? zodToJsonSchema(func.output) : undefined,
         examples: func.examples,
     }
 }
