@@ -1,25 +1,8 @@
 import { z } from "zod"
 import { collect, transform } from "streaming-iterables"
-import { ModelRes, modelMsg, Msg, userMsg, funcCall, funcMsg, Json } from "./types"
-import { sendAsk } from "./utils"
+import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, MFunc } from "./types"
+import { sendAsk } from './utils';
 import { FunctionManager, TokenManager } from "./baseManager"
-
-export interface Opt {
-    // 会话key，即文心应用 key
-    key: string,
-    // 会话密钥，即文心应用密钥
-    secret?: string,
-    // 函数管理器
-    functionManager?: FunctionManager,
-    // token管理器
-    tokenManager?: TokenManager,
-    // 最大上下文容量 默认3
-    contextSize?: number,
-    // 每个问题结束时的回调
-    onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
-    // 是否使用 4.0 模型 默认是
-    proModel?: boolean
-}
 
 export class ModelSession {
     #context: Msg[] = []
@@ -42,6 +25,25 @@ export class ModelSession {
         this.#opt = opt as Required<Opt>
         return this
     }
+    #sendAsk = async (ctx?: Msg[]) => {
+        let res: AsyncIterableIterator<ModelRes>
+        const context = ctx ?? this.#context
+        // 获取 token
+        const token = await this.#opt.tokenManager.get(this.#opt.key)
+        // 获取 funcs
+        const funcs = await collect(this.#opt.functionManager.funcsIter())
+        // 发送问题
+        if (token) {
+            if (funcs.length > 0) {
+                res = await sendAsk(token, context, funcs, this.#opt.proModel)
+            } else {
+                res = await sendAsk(token, context, undefined, this.#opt.proModel)
+            }
+        } else {
+            throw new Error("不能使用未登录或已删除的账号 Token 发起会话，请先登录！")
+        }
+        return res
+    }
     ask = async (msg: string) => {
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{
@@ -52,21 +54,7 @@ export class ModelSession {
         if (this.#context.length > this.#opt.contextSize) {
             this.#context = this.#context.slice(this.#context.length - this.#opt.contextSize, this.#context.length)
         }
-        // 获取 token
-        const token = await this.#opt.tokenManager.get(this.#opt.key)
-        // 获取 funcs
-        const funcs = await collect(this.#opt.functionManager.funcsIter())
-        let res: AsyncIterableIterator<ModelRes>
-        // 发送问题
-        if (token) {
-            if (funcs.length > 0) {
-                res = await sendAsk(token, this.#context, funcs, this.#opt.proModel)
-            } else {
-                res = await sendAsk(token, this.#context, undefined, this.#opt.proModel)
-            }
-        } else {
-            throw new Error("不能使用未登录或已删除的账号 Token 发起会话，请先登录！")
-        }
+        const res = await this.#sendAsk()
         // 记录回答
         this.#context.push(<z.infer<typeof modelMsg>>{
             role: "assistant",
@@ -74,10 +62,7 @@ export class ModelSession {
         })
         return transform(Infinity, async (chunk) => {
             this.#context[this.#context.length - 1].content += chunk.result
-            let res: {
-                type: "chat",
-                content: string
-            } | { type: "func", name: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterableIterator<string>> }> } = {
+            let res: ModelReturn = {
                 type: "chat",
                 content: chunk.result
             }
@@ -95,19 +80,16 @@ export class ModelSession {
                             const result = await this.#opt.functionManager.invokeFunc(name, args)
                             return {
                                 result,
-                                say: async () =>
-                                    transform<ModelRes, string>(Infinity,
-                                        (chunk) => chunk.result,
-                                        await sendAsk(token,
-                                            this.#context.concat([<z.infer<typeof funcMsg>>{
-                                                role: "function",
-                                                name,
-                                                content: JSON.stringify(result)
-                                            }]), funcs, this.#opt.proModel)
-                                    )
+                                say: async () => transform<ModelRes, string>(Infinity,
+                                    async (chunk) => chunk.result,
+                                    await this.#sendAsk(this.#context.concat([<z.infer<typeof funcMsg>>{
+                                        role: "function",
+                                        name,
+                                        content: JSON.stringify(result)
+                                    }]))
+                                )
                             }
                         },
-
                     }
                 }
                 await this.#opt.onAskAns({ id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] })
