@@ -19,8 +19,6 @@ export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json>
             { "role": "function", "name": func.name, "content": JSON.stringify(example.output) }
         ]).flat()
     }
-    console.log(res);
-
     return res
 }
 
