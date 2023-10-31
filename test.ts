@@ -20,11 +20,11 @@ await functionManager.addFunc(
         }),
         output: z.object({ names: z.array(z.string()).describe("网红的名字") }),
         func: () => ({ names: ["小雨"] }),
-        example: {
+        examples: [{
             ask: "网红提莫的情况？",
             input: { name: "提莫" },
             output: { names: ["小雨"] }
-        }
+        }]
     },
     {
         name: "exit",

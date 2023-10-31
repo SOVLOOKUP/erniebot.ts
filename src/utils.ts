@@ -12,12 +12,12 @@ export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json>
         responses: func.output ? zodToJsonSchema(func.output) : undefined,
         examples: undefined as undefined | Msg[],
     }
-    if (func.example) {
-        res.examples = [
-            { "role": "user", "content": func.example.ask },
-            { "role": "assistant", "content": null, "function_call": { "name": func.name, "arguments": JSON.stringify(func.example.input) } },
-            { "role": "function", "name": func.name, "content": JSON.stringify(func.example.output) }
-        ]
+    if (func.examples) {
+        res.examples = func.examples.map<Msg[]>(example => [
+            { "role": "user", "content": example.ask },
+            { "role": "assistant", "content": null, "function_call": { "name": func.name, "arguments": JSON.stringify(example.input) } },
+            { "role": "function", "name": func.name, "content": JSON.stringify(example.output) }
+        ]).flat()
     }
     console.log(res);
 
