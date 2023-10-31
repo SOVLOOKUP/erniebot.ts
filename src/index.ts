@@ -16,7 +16,7 @@ export class ModelSession {
             throw new Error("上下文容量必须为正奇数")
         }
         opt.onAskAns = opt.onAskAns ?? (() => { })
-        opt.proModel = opt.proModel ?? true
+        opt.proModel = opt.proModel ?? false
         opt.tokenManager = opt.tokenManager ?? new TokenManager()
         if (opt.secret) {
             await opt.tokenManager.login(opt.key, opt.secret)

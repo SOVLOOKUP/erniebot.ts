@@ -22,7 +22,7 @@ export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json>
     return res
 }
 
-export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?: MFunc[], pro = true) => {
+export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?: MFunc[], pro = false) => {
     const res = await fetch(`https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions${pro ? "_pro" : ""}?access_token=${token}`, {
         method: "POST",
         body: JSON.stringify({

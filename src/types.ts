@@ -15,7 +15,7 @@ export interface Opt {
     contextSize?: number,
     // 每个问题结束时的回调
     onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
-    // 是否使用 4.0 模型 默认是
+    // 是否使用 4.0 模型 默认否
     proModel?: boolean
 }
 
