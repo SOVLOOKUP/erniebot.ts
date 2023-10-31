@@ -1,17 +1,27 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { FuncInput, Json, MFunc, ModelRes, msg } from "./types"
+import { FuncInput, Json, MFunc, Msg, msg } from "./types"
 import { filter, transform } from "streaming-iterables"
 
 export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
     func.input = func.input ?? z.object({}) as Args
-    return {
+    const res = {
         name: func.name,
         description: func.description,
         parameters: zodToJsonSchema(func.input),
         responses: func.output ? zodToJsonSchema(func.output) : undefined,
-        examples: func.examples,
+        examples: undefined as undefined | Msg[],
     }
+    if (func.example) {
+        res.examples = [
+            { "role": "user", "content": func.example.ask },
+            { "role": "assistant", "content": null, "function_call": { "name": func.name, "arguments": JSON.stringify(func.example.input) } },
+            { "role": "function", "name": func.name, "content": JSON.stringify(func.example.output) }
+        ]
+    }
+    console.log(res);
+
+    return res
 }
 
 export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?: MFunc[], pro = true) => {

@@ -82,7 +82,11 @@ export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<J
     input?: Args
     output?: Returns
     func: z.infer<z.ZodFunction<z.ZodTuple<[Args]>, Returns>>,
-    examples?: z.infer<typeof msg>[]
+    example?: {
+        ask: string
+        input: z.infer<Args>
+        output: z.infer<Returns>
+    }
 }
 
 export type MFunc = ReturnType<typeof mkFunc>
