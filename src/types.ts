@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { mkFunc } from "./utils";
+import { mkFunc, sendAsk } from './utils';
 import type { FunctionManager, TokenManager } from "./baseManager";
 
 export interface Opt {
@@ -16,7 +16,9 @@ export interface Opt {
     // 每个问题结束时的回调
     onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
     // 是否使用 4.0 模型 默认否
-    proModel?: boolean
+    proModel?: boolean,
+    // 自定义消息发送器
+    sendAsk?: typeof sendAsk
 }
 
 export type ModelReturn = {

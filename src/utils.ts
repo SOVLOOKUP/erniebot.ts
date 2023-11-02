@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
-import { FuncInput, Json, MFunc, Msg, msg } from "./types"
+import { FuncInput, Json, MFunc, ModelRes, Msg, msg } from "./types"
 import { filter, transform } from "streaming-iterables"
 
 export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
@@ -38,8 +38,7 @@ export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?
     res.body?.pipeTo(td.writable)
     let cache: string | undefined
 
-    return filter((chunk) => chunk !== undefined,
-        transform(Infinity, (chunk: string) => {
+    return transform<string,ModelRes>(Infinity, (chunk: string) => {
             const parsed = chunk.split("data: ")
             // 接上个回复
             if (parsed.length === 1 && cache !== undefined) {
@@ -68,7 +67,7 @@ export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?
             }
         },
             filter((chunk) => chunk.length > 1, td.readable as unknown as AsyncIterable<string>)
-        ))
+        )
 }
 
 export const login = async (key: string, secret: string) => {

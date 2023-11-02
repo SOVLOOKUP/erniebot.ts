@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { collect, transform } from "streaming-iterables"
-import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, MFunc } from "./types"
+import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, TokenManager } from "./baseManager"
 
@@ -22,6 +22,7 @@ export class ModelSession {
             await opt.tokenManager.login(opt.key, opt.secret)
         }
         opt.functionManager = opt.functionManager ?? new FunctionManager()
+        opt.sendAsk = opt.sendAsk ?? sendAsk
         this.#opt = opt as Required<Opt>
         return this
     }
@@ -35,9 +36,9 @@ export class ModelSession {
         // 发送问题
         if (token) {
             if (funcs.length > 0) {
-                res = await sendAsk(token, context, funcs, this.#opt.proModel)
+                res = await this.#opt.sendAsk(token, context, funcs, this.#opt.proModel)
             } else {
-                res = await sendAsk(token, context, undefined, this.#opt.proModel)
+                res = await this.#opt.sendAsk(token, context, undefined, this.#opt.proModel)
             }
         } else {
             throw new Error("不能使用未登录或已删除的账号 Token 发起会话，请先登录！")
