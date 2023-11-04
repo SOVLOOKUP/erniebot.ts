@@ -27,7 +27,7 @@ export class ModelSession {
         return this
     }
     #sendAsk = async (ctx?: Msg[]) => {
-        let res: AsyncIterableIterator<ModelRes>
+        let res: AsyncIterable<ModelRes>
         const context = ctx ?? this.#context
         // 获取 token
         const token = await this.#opt.tokenManager.get(this.#opt.key)

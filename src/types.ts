@@ -24,7 +24,7 @@ export interface Opt {
 export type ModelReturn = {
     type: "chat",
     content: string
-} | { type: "func", name: string, thoughts: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterableIterator<string>> }> }
+} | { type: "func", name: string, thoughts: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterable<string>> }> }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
 type Literal = z.infer<typeof literalSchema>;
