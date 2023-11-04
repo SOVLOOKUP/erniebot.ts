@@ -45,7 +45,7 @@ export class ModelSession {
         }
         return res
     }
-    ask = async (msg: string) => {
+    ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{
             role: "user",
