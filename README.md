@@ -4,7 +4,7 @@
 
 ## 入参
 
-https://github.com/SOVLOOKUP/erniebot.ts/blob/main/src/index.ts#L7
+https://github.com/SOVLOOKUP/erniebot.ts/blob/main/src/types.ts#L7
 
 ## 用法
 
