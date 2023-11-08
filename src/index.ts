@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { collect, transform, filter, consume, map } from 'streaming-iterables';
-import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook } from "./types"
+import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
 
@@ -30,14 +30,16 @@ export class ModelSession {
         opt.proModel = opt.proModel ?? false
         // 初始化sendAsk函数
         opt.sendAsk = opt.sendAsk ?? sendAsk
-        // 初始化PluginManager
+        // 初始化PluginManager及加载器
         opt.pluginManager = opt.pluginManager ?? new PluginManager()
+        opt.pluginLoader = opt.pluginLoader ?? (async (name) => await import(name))
         // 存储参数
         this.#opt = opt as Required<Opt>
         // 初始化插件
         const installedPlugins = await opt.pluginManager.list()
-        // todo 加载插件
-        installedPlugins.map((plugin) => { })
+        const installPlugins = installedPlugins.map((plugin) => this.loadPlugin(plugin))
+        // 加载插件
+        await Promise.all(installPlugins)
         return this
     }
     #sendAsk = async (ctx?: Msg[]) => {
@@ -59,14 +61,19 @@ export class ModelSession {
         }
         return res
     }
-    addPlugin = async (name: string, pluginLoader: (opt: {
-        addFunc: FunctionManager["addFunc"],
-        delFunc: FunctionManager['delFunc'],
-        funcsIter: FunctionManager['funcsIter'],
-        setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
-    }) => void | Promise<void>) => {
+    // 使用插件加载器加载插件
+    loadPlugin = async (name: string) => {
+        try {
+            const module = await this.#opt.pluginLoader(name)
+            await this.addPlugin(name, module)
+        } catch (error) {
+            console.log(`插件 ${name} 加载失败: \n${JSON.stringify(error)}`)
+        }
+    }
+    // 直接添加插件
+    addPlugin = async (name: string, plugin: Plugin) => {
         const prefix = name + "__"
-        await pluginLoader({
+        await plugin({
             addFunc: async (...funcs) => {
                 await this.#opt.functionManager.addFunc(...funcs.map(func => { func.name = prefix + func.name; return func; }));
             },
@@ -81,6 +88,7 @@ export class ModelSession {
         })
         await this.#opt.pluginManager.add(name)
     }
+    // 移除插件
     removePlugin = async (name: string) => {
         const prefix = name + "__"
         const funcsIter = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.funcsIter)
@@ -90,7 +98,9 @@ export class ModelSession {
         }
         await this.#opt.pluginManager.del(name)
     }
+    // 列出插件
     listPlugin = () => this.#opt.pluginManager.list()
+    // 发起问话
     ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{

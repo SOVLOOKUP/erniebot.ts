@@ -22,8 +22,17 @@ export interface Opt {
     // 是否使用 4.0 模型 默认否
     proModel?: boolean,
     // 自定义消息发送器
-    sendAsk?: typeof sendAsk
+    sendAsk?: typeof sendAsk,
+    // 插件加载器
+    pluginLoader?: (name: string) => Plugin | Promise<Plugin>
 }
+
+export type Plugin = (opt: {
+    addFunc: FunctionManager["addFunc"],
+    delFunc: FunctionManager['delFunc'],
+    funcsIter: FunctionManager['funcsIter'],
+    setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
+}) => void | Promise<void>
 
 export type ModelReturn = {
     type: "chat",
