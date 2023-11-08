@@ -1,29 +1,43 @@
 import { z } from "zod"
-import { collect, transform } from "streaming-iterables"
-import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt } from "./types"
+import { collect, transform, filter, consume, map } from 'streaming-iterables';
+import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook } from "./types"
 import { sendAsk } from './utils';
-import { FunctionManager, TokenManager } from "./baseManager"
+import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
 
 export class ModelSession {
     #context: Msg[] = []
     #opt: Required<Opt>
+    #ansAnsHook: Map<string, AskAnsHook> = new Map()
     constructor(opt: Opt, resolve: (value: ModelSession) => void, reject: (reason?: any) => void) {
         this.#init(opt).then(resolve).catch(reject)
     }
     #init = async (opt: Opt) => {
-        opt.contextSize = opt.contextSize ?? 3
-        if (!(opt.contextSize >= 1 && opt.contextSize % 2 === 1)) {
-            throw new Error("上下文容量必须为正奇数")
-        }
-        opt.onAskAns = opt.onAskAns ?? (() => { })
-        opt.proModel = opt.proModel ?? false
+        // 初始化TokenManager
         opt.tokenManager = opt.tokenManager ?? new TokenManager()
         if (opt.secret) {
             await opt.tokenManager.login(opt.key, opt.secret)
         }
+        // 初始化FunctionManager
         opt.functionManager = opt.functionManager ?? new FunctionManager()
+        // 初始化最大容量设置
+        opt.contextSize = opt.contextSize ?? 3
+        if (!(opt.contextSize >= 1 && opt.contextSize % 2 === 1)) {
+            throw new Error("上下文容量必须为正奇数")
+        }
+        // 初始化onAskAns HOOK
+        opt.onAskAns = opt.onAskAns ?? (() => { })
+        // 初始化模型类别参数
+        opt.proModel = opt.proModel ?? false
+        // 初始化sendAsk函数
         opt.sendAsk = opt.sendAsk ?? sendAsk
+        // 初始化PluginManager
+        opt.pluginManager = opt.pluginManager ?? new PluginManager()
+        // 存储参数
         this.#opt = opt as Required<Opt>
+        // 初始化插件
+        const installedPlugins = await opt.pluginManager.list()
+        // todo 加载插件
+        installedPlugins.map((plugin) => { })
         return this
     }
     #sendAsk = async (ctx?: Msg[]) => {
@@ -32,7 +46,7 @@ export class ModelSession {
         // 获取 token
         const token = await this.#opt.tokenManager.get(this.#opt.key)
         // 获取 funcs
-        const funcs = await collect(this.#opt.functionManager.funcsIter())
+        const funcs = await collect(this.#opt.functionManager.funcsIter)
         // 发送问题
         if (token) {
             if (funcs.length > 0) {
@@ -45,12 +59,38 @@ export class ModelSession {
         }
         return res
     }
-    updateOpt = (opt: Partial<Opt>) => {
-        this.#opt = {
-            ...this.#opt,
-            ...opt
-        }
+    addPlugin = async (name: string, pluginLoader: (opt: {
+        addFunc: FunctionManager["addFunc"],
+        delFunc: FunctionManager['delFunc'],
+        funcsIter: FunctionManager['funcsIter'],
+        setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
+    }) => void | Promise<void>) => {
+        const prefix = name + "__"
+        await pluginLoader({
+            addFunc: async (...funcs) => {
+                await this.#opt.functionManager.addFunc(...funcs.map(func => { func.name = prefix + func.name; return func; }));
+            },
+            delFunc: async (name) => await this.#opt.functionManager.delFunc(prefix + name),
+            funcsIter: (() => {
+                const mine = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.funcsIter)
+                return map((chunk) => { chunk.name = chunk.name.replace(prefix, ""); return chunk }, mine)
+            })(),
+            setAskAnsHook: (hook) => {
+                this.#ansAnsHook.set(name, hook)
+            }
+        })
+        await this.#opt.pluginManager.add(name)
     }
+    removePlugin = async (name: string) => {
+        const prefix = name + "__"
+        const funcsIter = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.funcsIter)
+        await consume(map((chunk) => { this.#opt.functionManager.delFunc(chunk.name) }, funcsIter))
+        if (this.#ansAnsHook.has(name)) {
+            this.#ansAnsHook.delete(name)
+        }
+        await this.#opt.pluginManager.del(name)
+    }
+    listPlugin = () => this.#opt.pluginManager.list()
     ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{
@@ -100,7 +140,9 @@ export class ModelSession {
                         },
                     }
                 }
-                await this.#opt.onAskAns({ id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] })
+                const input = { id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] }
+                await this.#opt.onAskAns(input)
+                consume(map(async (func) => await func(input), this.#ansAnsHook.values()))
             }
             return res
         }, res)

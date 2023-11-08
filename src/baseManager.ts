@@ -9,7 +9,7 @@ export class FunctionManager {
         this.#store = new Map<string, MFunc>()
         this.#funcs = new Map<string, z.infer<z.ZodFunction<any, any>>>()
     }
-    funcsIter: () => Iterable<MFunc> | AsyncIterable<MFunc> = () => this.#store.values()
+    get funcsIter() { return this.#store.values() as Iterable<MFunc> | AsyncIterable<MFunc> }
     addFunc: <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(...funcs: FuncInput<Args, Returns>[]) => void | Promise<void> = (...funcs) => {
         funcs.map(func => {
             this.#store.set(func.name, mkFunc(func))
@@ -33,4 +33,14 @@ export class TokenManager {
     }
     get: (key: string) => Promise<string | undefined> | string | undefined = (key: string) => this.#store.get(key)
     del: (key: string) => Promise<boolean> | boolean = (key: string) => this.#store.delete(key)
+}
+
+export class PluginManager {
+    #store: string[]
+    constructor() {
+        this.#store = []
+    }
+    list = async () => this.#store
+    add = async (name: string) => { this.#store.push(name) }
+    del = async (name: string) => { this.#store = this.#store.filter((p) => p !== name) }
 }
