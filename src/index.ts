@@ -45,6 +45,12 @@ export class ModelSession {
         }
         return res
     }
+    updateOpt = (opt: Partial<Opt>) => {
+        this.#opt = {
+            ...this.#opt,
+            ...opt
+        }
+    }
     ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{

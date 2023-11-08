@@ -2,6 +2,8 @@ import { z } from "zod"
 import { mkFunc, sendAsk } from './utils';
 import type { FunctionManager, TokenManager } from "./baseManager";
 
+export interface AskAns { id: string, time: number, msg: Msg[], tokens: number }
+
 export interface Opt {
     // 会话key，即文心应用 key
     key: string,
@@ -14,7 +16,7 @@ export interface Opt {
     // 最大上下文容量 默认3
     contextSize?: number,
     // 每个问题结束时的回调
-    onAskAns?: (things: { id: string, time: number, msg: Msg[], tokens: number }) => void | Promise<void>,
+    onAskAns?: (askAns: AskAns) => void | Promise<void>,
     // 是否使用 4.0 模型 默认否
     proModel?: boolean,
     // 自定义消息发送器
