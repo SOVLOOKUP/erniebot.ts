@@ -1,0 +1,25 @@
+{
+    "name": "erniebot-plugin-demo",
+    "type": "module",
+    "version": "0.0.1",
+    "scripts": {
+        "build": "tsup"
+    },
+    "module": "dist/index.js",
+    "main": "dist/index.cjs",
+    "tsup": {
+        "entry": [
+            "index.ts"
+        ],
+        "format": [
+            "esm",
+            "cjs"
+        ],
+        "clean": true,
+        "treeshake": true,
+        "shims": true
+    },
+    "files": [
+        "dist/*"
+    ]
+}
