@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { zodToJsonSchema } from "zod-to-json-schema"
 import { FuncInput, Json, MFunc, ModelRes, Msg, msg } from "./types"
-import { filter, transform } from "streaming-iterables"
+import { flatten, map } from 'streaming-iterables';
 
 export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
     func.input = func.input ?? z.object({}) as Args
@@ -34,40 +34,39 @@ export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?
             "Content-Type": "application/json"
         }
     })
-    const td = new TextDecoderStream()
-    res.body?.pipeTo(td.writable)
+    // 解码器
+    const td = res.body?.pipeThrough(new TextDecoderStream())
+    // 缓存
     let cache: string | undefined
-
-    return transform<string,ModelRes>(Infinity, (chunk: string) => {
-            const parsed = chunk.split("data: ")
-            // 接上个回复
-            if (parsed.length === 1 && cache !== undefined) {
-                parsed[0] = cache + parsed[0]
-                cache = undefined
-                // 没有回复完就暂存
-                try {
-                    return JSON.parse(parsed[0])
-                } catch (error) {
-                    cache = parsed[0]
-                }
-            }
-            // 2 个回复
-            if (parsed.length === 3) {
-                cache = parsed[2]
-                return JSON.parse(parsed[1])
-            }
-            // 正常回复
-            if (parsed.length === 2) {
-                // 没有回复完就暂存
-                try {
-                    return JSON.parse(parsed[1])
-                } catch (error) {
-                    cache = parsed[1]
-                }
-            }
-        },
-            filter((chunk) => chunk.length > 1, td.readable as unknown as AsyncIterable<string>)
-        )
+    return flatten(map((chunk) => {
+        const hasHead = chunk.startsWith("data: ")
+        const hasTail = chunk.endsWith("}}\n\n")
+        let mutiRes: ModelRes[]
+        // 有头有尾(已经结束)
+        if (hasHead && hasTail) {
+            mutiRes = chunk.split("data: ").splice(1).map(d => JSON.parse(d))
+        }
+        // 有头无尾(还没结束)
+        if (hasHead && !hasTail) {
+            const yw = chunk.replace("data: ", "").split("\n\ndata: ")
+            // 没结束的进 cache
+            cache = yw.pop()
+            mutiRes = yw.map(d => JSON.parse(d))
+        }
+        // 无头有尾(紧接上文)
+        if (!hasHead && hasTail) {
+            // 把头接上, 变成有头有尾
+            mutiRes = (cache + chunk).split("data: ").map(d => JSON.parse(d))
+            // cache用完了
+            cache = undefined
+        }
+        // 无头无尾(中间段) 
+        if (!hasHead && !hasTail) {
+            cache += chunk
+            mutiRes = []
+        }
+        return mutiRes
+    }, td as unknown as AsyncIterable<string>))
 }
 
 export const login = async (key: string, secret: string) => {

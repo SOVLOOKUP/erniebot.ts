@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { collect, transform, filter, consume, map } from 'streaming-iterables';
+import { collect, filter, consume, map } from 'streaming-iterables';
 import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
@@ -117,7 +117,7 @@ export class ModelSession {
             role: "assistant",
             content: ""
         })
-        return transform(Infinity, async (chunk) => {
+        return map(async (chunk) => {
             this.#context[this.#context.length - 1].content += chunk.result
             let res: ModelReturn = {
                 type: "chat",
@@ -138,7 +138,7 @@ export class ModelSession {
                             const result = await this.#opt.functionManager.invokeFunc(name, args)
                             return {
                                 result,
-                                say: async () => transform<ModelRes, string>(Infinity,
+                                say: async () => map<ModelRes, string>(
                                     async (chunk) => chunk.result,
                                     await this.#sendAsk(this.#context.concat([<z.infer<typeof funcMsg>>{
                                         role: "function",
