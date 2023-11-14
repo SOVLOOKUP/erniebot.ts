@@ -1,7 +1,7 @@
 {
     "name": "erniebot.ts",
     "type": "module",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
