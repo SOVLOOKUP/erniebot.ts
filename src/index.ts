@@ -3,6 +3,7 @@ import { collect, filter, consume, map } from 'streaming-iterables';
 import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
+export { z }
 
 export class ModelSession {
     #context: Msg[] = []
@@ -20,9 +21,9 @@ export class ModelSession {
         // 初始化FunctionManager
         opt.functionManager = opt.functionManager ?? new FunctionManager()
         // 初始化最大容量设置
-        opt.contextSize = opt.contextSize ?? 3
-        if (!(opt.contextSize >= 1 && opt.contextSize % 2 === 1)) {
-            throw new Error("上下文容量必须为正奇数")
+        opt.contextSize = opt.contextSize ?? 1
+        if (opt.contextSize < 0) {
+            throw new Error("上下文容量必须为正数")
         }
         // 初始化onAskAns HOOK
         opt.onAskAns = opt.onAskAns ?? (() => { })
@@ -63,12 +64,8 @@ export class ModelSession {
     }
     // 使用插件加载器加载插件
     loadPlugin = async (name: string) => {
-        try {
-            const module = await this.#opt.pluginLoader(name)
-            await this.addPlugin(name, module)
-        } catch (error) {
-            console.log(`插件 ${name} 加载失败: \n${JSON.stringify(error)}`)
-        }
+        const module = await this.#opt.pluginLoader(name)
+        await this.addPlugin(name, module)
     }
     // 直接添加插件
     addPlugin = async (name: string, plugin: Plugin) => {
@@ -102,14 +99,17 @@ export class ModelSession {
     listPlugin = () => this.#opt.pluginManager.list()
     // 发起问话
     ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
+        // 获取 Hooks
+        const afterHooks = this.#ansAnsHook.values()
         // 记录问题
         const askMsg = <z.infer<typeof userMsg>>{
             role: "user",
             content: msg
         }
         this.#context.push(askMsg)
-        if (this.#context.length > this.#opt.contextSize) {
-            this.#context = this.#context.slice(this.#context.length - this.#opt.contextSize, this.#context.length)
+        const maxMsgSize = this.#opt.contextSize * 2 + 1
+        if (this.#context.length > maxMsgSize) {
+            this.#context = this.#context.slice(this.#context.length - maxMsgSize, this.#context.length)
         }
         const res = await this.#sendAsk()
         // 记录回答
@@ -152,7 +152,7 @@ export class ModelSession {
                 }
                 const input = { id: chunk.id, time: chunk.created, tokens: chunk.usage.total_tokens, msg: [askMsg, this.#context[this.#context.length - 1]] }
                 await this.#opt.onAskAns(input)
-                consume(map(async (func) => await func(input), this.#ansAnsHook.values()))
+                consume(map(async (func) => await func(input), afterHooks))
             }
             return res
         }, res)

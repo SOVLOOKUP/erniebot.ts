@@ -15,9 +15,9 @@ export interface Opt {
     tokenManager?: TokenManager,
     // plugin管理器
     pluginManager?: PluginManager,
-    // 最大上下文容量 默认3
+    // 上下文包括的对话轮数 默认1
     contextSize?: number,
-    // 每个问题结束时的回调
+    // 每个问题结束时的默认回调
     onAskAns?: AskAnsHook,
     // 是否使用 4.0 模型 默认否
     proModel?: boolean,

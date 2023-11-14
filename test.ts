@@ -1,37 +1,13 @@
 import { config } from "dotenv"
 import { newSession } from './src';
-import { z } from "zod"
+import Plugin from "./erniebot-plugin-demo"
 import { createInterface } from "readline/promises"
 
 const { parsed } = config()
 const session = await newSession({ key: parsed.KEY, secret: parsed.SECRET })
 
 // 添加插件
-await session.addPlugin("test_plugin", async ({ addFunc }) => {
-    await addFunc(
-        {
-            name: "find_wh",
-            description: "网红名字查询",
-            input: z.object({
-                name: z.string()
-            }),
-            output: z.object({ names: z.array(z.string()).describe("网红的名字") }),
-            func: () => ({ names: ["小雨"] }),
-            examples: [
-                {
-                    ask: "网红提莫的情况？",
-                    input: { name: "提莫" },
-                    output: { names: ["小雨"] }
-                }
-            ]
-        },
-        {
-            name: "exit",
-            description: "退出对话，结束对话，终止对话。用户在说“拜拜”、“再见”等词时调用",
-            func: () => process.exit()
-        }
-    )
-})
+await session.addPlugin("test_plugin", Plugin)
 console.log("已安装插件:", await session.listPlugin());
 
 // 问一个问题, 触发 find_wh 函数调用
