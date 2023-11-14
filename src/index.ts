@@ -128,7 +128,8 @@ export class ModelSession {
                 if (chunk.function_call) {
                     const name = chunk.function_call.name
                     const args = JSON.parse(chunk.function_call.arguments)
-                    this.#context[this.#context.length - 1]["function_call"] = args
+                    delete this.#context[this.#context.length - 1]["content"]
+                    this.#context[this.#context.length - 1]["function_call"] = chunk.function_call
                     res = {
                         type: "func",
                         name,
