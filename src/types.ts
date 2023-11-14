@@ -28,9 +28,13 @@ export interface Opt {
 }
 
 export type Plugin = (opt: {
+    // 添加可调用函数
     addFunc: FunctionManager["addFunc"],
+    // 删除可调用函数
     delFunc: FunctionManager['delFunc'],
+    // 查询可调用函数
     funcsIter: FunctionManager['funcsIter'],
+    // 设置对话后 HOOK
     setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
 }) => void | Promise<void>
 
