@@ -1,6 +1,6 @@
 # 文心一言 TypeScript SDK
 
-在浏览器和 Nodejs 调用文心一言的大模型能力, 支持动态函数解析和插件
+在浏览器和 Nodejs 中调用文心一言的大模型能力且支持动态函数解析和插件
 
 [**在线演示应用**](https://ai.metapoint.tech/)
 
