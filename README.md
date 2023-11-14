@@ -6,7 +6,9 @@
 
 ## 安装
 
-```pnpm add erniebot.ts```
+```js
+pnpm add erniebot.ts
+```
 
 ## 用法
 
