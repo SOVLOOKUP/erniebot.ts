@@ -139,9 +139,9 @@ export interface PkgInfo {
         email: string
       }
       publish_time: number
-    }[]
+    }
     downloads: {
       all: number
     }
-  }
+  }[]
 }
