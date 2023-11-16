@@ -32,6 +32,8 @@ for await (const msg of await session.ask("你好")) {
 
 ## 插件
 
+插件命名前戳: `erniebot-plugin-`
+
 **定义:**
 https://github.com/SOVLOOKUP/erniebot.ts/blob/main/src/types.ts#L30
 
