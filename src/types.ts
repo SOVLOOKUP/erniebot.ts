@@ -5,42 +5,42 @@ import type { FunctionManager, PluginManager, TokenManager } from "./baseManager
 export interface AskAns { id: string, time: number, msg: Msg[], tokens: number }
 export type AskAnsHook = (askAns: AskAns) => void | Promise<void>
 export interface Opt {
-    // 会话key，即文心应用 key
-    key: string,
-    // 会话密钥，即文心应用密钥
-    secret?: string,
-    // 函数管理器
-    functionManager?: FunctionManager,
-    // token管理器
-    tokenManager?: TokenManager,
-    // plugin管理器
-    pluginManager?: PluginManager,
-    // 上下文包括的对话轮数 默认1
-    contextSize?: number,
-    // 每个问题结束时的默认回调
-    onAskAns?: AskAnsHook,
-    // 是否使用 4.0 模型 默认否
-    proModel?: boolean,
-    // 自定义消息发送器
-    sendAsk?: typeof sendAsk,
-    // 插件加载器
-    pluginLoader?: (name: string) => Plugin | Promise<Plugin>
+  // 会话key，即文心应用 key
+  key: string,
+  // 会话密钥，即文心应用密钥
+  secret?: string,
+  // 函数管理器
+  functionManager?: FunctionManager,
+  // token管理器
+  tokenManager?: TokenManager,
+  // plugin管理器
+  pluginManager?: PluginManager,
+  // 上下文包括的对话轮数 默认1
+  contextSize?: number,
+  // 每个问题结束时的默认回调
+  onAskAns?: AskAnsHook,
+  // 是否使用 4.0 模型 默认否
+  proModel?: boolean,
+  // 自定义消息发送器
+  sendAsk?: typeof sendAsk,
+  // 插件加载器
+  pluginLoader?: (name: string) => Plugin | Promise<Plugin>
 }
 
 export type Plugin = (opt: {
-    // 添加可调用函数
-    addFunc: FunctionManager["addFunc"],
-    // 删除可调用函数
-    delFunc: FunctionManager['delFunc'],
-    // 查询可调用函数
-    funcsIter: FunctionManager['funcsIter'],
-    // 设置对话后 HOOK
-    setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
+  // 添加可调用函数
+  addFunc: FunctionManager["addFunc"],
+  // 删除可调用函数
+  delFunc: FunctionManager['delFunc'],
+  // 查询可调用函数
+  funcsIter: FunctionManager['funcsIter'],
+  // 设置对话后 HOOK
+  setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
 }) => void | Promise<void>
 
 export type ModelReturn = {
-    type: "chat",
-    content: string
+  type: "chat",
+  content: string
 } | { type: "func", name: string, thoughts: string, args: object, exec: () => Promise<{ result: object, say: () => Promise<AsyncIterable<string>> }> }
 
 const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
@@ -51,94 +51,97 @@ const jsonSchema: z.ZodType<Json> = z.lazy(() => z.union([literalSchema, z.array
 export const funcCall = z.object({ name: z.string(), arguments: z.string(), thoughts: z.string() })
 
 export const userMsg = z.object({
-    role: z.literal("user"),
-    content: z.string()
+  role: z.literal("user"),
+  content: z.string()
 })
 
 export const modelMsg = z.object({
-    role: z.literal("assistant"),
-    function_call: funcCall.optional(),
-    content: z.string().optional()
+  role: z.literal("assistant"),
+  function_call: funcCall.optional(),
+  content: z.string().optional()
 })
 
 export const funcMsg = z.object({
-    role: z.literal("function"),
-    name: z.string(),
-    content: jsonSchema
+  role: z.literal("function"),
+  name: z.string(),
+  content: jsonSchema
 })
 
 export const msg = z.union([userMsg, modelMsg, funcMsg])
 export type Msg = z.infer<typeof msg>
 
 export interface ModelRes {
-    id: string,
-    created: number,
-    result: string,
-    function_call: z.infer<typeof funcCall>,
-    is_end: boolean,
-    is_truncated: boolean,
-    need_clear_history: boolean,
-    object: "chat.completion",
-    sentence_id: number,
-    ban_round: number,
-    usage: {
-        total_tokens: number,
-        prompt_tokens: number,
-        completion_tokens: number,
-        plugins?: {
-            name: string,
-            total_tokens: number,
-            parse_tokens: number,
-            abstract_tokens: number,
-            search_tokens: number,
-        }[]
-    }
+  id: string,
+  created: number,
+  result: string,
+  function_call: z.infer<typeof funcCall>,
+  is_end: boolean,
+  is_truncated: boolean,
+  need_clear_history: boolean,
+  object: "chat.completion",
+  sentence_id: number,
+  ban_round: number,
+  usage: {
+    total_tokens: number,
+    prompt_tokens: number,
+    completion_tokens: number,
+    plugins?: {
+      name: string,
+      total_tokens: number,
+      parse_tokens: number,
+      abstract_tokens: number,
+      search_tokens: number,
+    }[]
+  }
 }
 
 export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>> {
-    name: string
-    description: string
-    input?: Args
-    output?: Returns
-    func: z.infer<z.ZodFunction<z.ZodTuple<[Args]>, Returns>> | z.infer<z.ZodFunction<z.ZodTuple<[Args]>, z.ZodPromise<Returns>>>,
-    examples?: {
-        ask: string
-        input: z.infer<Args>
-        output: z.infer<Returns>
-    }[]
+  name: string
+  description: string
+  input?: Args
+  output?: Returns
+  func: z.infer<z.ZodFunction<z.ZodTuple<[Args]>, Returns>> | z.infer<z.ZodFunction<z.ZodTuple<[Args]>, z.ZodPromise<Returns>>>,
+  examples?: {
+    ask: string
+    input: z.infer<Args>
+    output: z.infer<Returns>
+  }[]
 }
 
 export type MFunc = ReturnType<typeof mkFunc>
 
 export interface PkgInfo {
-  package: {
-    name: string
-    version: string
-    _rev: string
-    scope: string
-    keywords: Array<string>
-    versions: Array<string>
-    description: string
-    license: string
-    maintainers: Array<{
-      username: string
+  total: number
+  objects: {
+    package: {
       name: string
-      email: string
-    }>
-    'dist-tags': {
-      latest: string
+      version: string
+      _rev: string
+      scope: string
+      keywords: Array<string>
+      versions: Array<string>
+      description: string
+      license: string
+      maintainers: Array<{
+        username: string
+        name: string
+        email: string
+      }>
+      'dist-tags': {
+        latest: string
+      }
+      date: string
+      created: string
+      modified: string
+      _source_registry_name: string
+      _npmUser: {
+        name: string
+        email: string
+      }
+      publish_time: number
     }
-    date: string
-    created: string
-    modified: string
-    _source_registry_name: string
-    _npmUser: {
-      name: string
-      email: string
+    downloads: {
+      all: number
     }
-    publish_time: number
-  }
-  downloads: {
-    all: number
   }
 }
