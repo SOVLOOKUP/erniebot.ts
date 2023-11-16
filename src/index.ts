@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { collect, filter, consume, map } from 'streaming-iterables';
-import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin } from "./types"
+import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin, PkgInfo } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
 export { z }
@@ -95,7 +95,7 @@ export class ModelSession {
         }
         await this.#opt.pluginManager.del(name)
     }
-    // 列出插件
+    // 列出已安装插件
     listPlugin = () => this.#opt.pluginManager.list()
     // 发起问话
     ask = async (msg: string): Promise<AsyncIterable<ModelReturn>> => {
@@ -161,6 +161,16 @@ export class ModelSession {
 }
 
 export const newSession = async (opt: Opt) => new Promise<ModelSession>((resolve, reject) => new ModelSession(opt, resolve, reject))
+// 搜索插件
+export const searchPlugin = async (name: string = '', page: number = 0) => {
+    if (page > 1000 || page < 0) {
+        return null
+    }
+    const r = await fetch(`https://registry.npmmirror.com/-/v1/search?text=erniebot-plugin-${name}&size=10&from=${page - 1}`)
+    const res = await r.json()
+    return res as PkgInfo
+}
+
 export * from "./baseManager"
 export * from "./utils"
 export * from "./types"

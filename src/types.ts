@@ -109,3 +109,36 @@ export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<J
 }
 
 export type MFunc = ReturnType<typeof mkFunc>
+
+export interface PkgInfo {
+  package: {
+    name: string
+    version: string
+    _rev: string
+    scope: string
+    keywords: Array<string>
+    versions: Array<string>
+    description: string
+    license: string
+    maintainers: Array<{
+      username: string
+      name: string
+      email: string
+    }>
+    'dist-tags': {
+      latest: string
+    }
+    date: string
+    created: string
+    modified: string
+    _source_registry_name: string
+    _npmUser: {
+      name: string
+      email: string
+    }
+    publish_time: number
+  }
+  downloads: {
+    all: number
+  }
+}
