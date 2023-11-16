@@ -162,7 +162,7 @@ export class ModelSession {
 
 export const newSession = async (opt: Opt) => new Promise<ModelSession>((resolve, reject) => new ModelSession(opt, resolve, reject))
 // 搜索插件
-export const searchPlugin = async (name: string = '', page: number = 0) => {
+export const searchPlugin = async (name: string = '', page: number = 1) => {
     if (page > 1000 || page < 0) {
         return null
     }
