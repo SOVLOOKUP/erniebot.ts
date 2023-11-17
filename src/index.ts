@@ -167,8 +167,9 @@ export const searchPlugin = async (name: string = '', page: number = 1) => {
         return null
     }
     const r = await fetch(`https://registry.npmmirror.com/-/v1/search?text=erniebot-plugin-${name}&size=10&from=${page - 1}`)
-    const res = await r.json()
-    return res as PkgInfo
+    const res = await r.json() as PkgInfo
+    res.objects = res.objects.filter((object) => object.package.name.startsWith("erniebot-plugin-"))
+    return res
 }
 
 export * from "./baseManager"
