@@ -38,7 +38,8 @@ export class ModelSession {
         this.#opt = opt as Required<Opt>
         // 初始化插件
         const installedPlugins = await opt.pluginManager.list()
-        const installPlugins = installedPlugins.map((plugin) => this.loadPlugin(plugin))
+        // 不需要重复注册
+        const installPlugins = installedPlugins.map((plugin) => this.loadPlugin(plugin, false))
         // 加载插件
         await Promise.all(installPlugins)
         return this
@@ -63,12 +64,12 @@ export class ModelSession {
         return res
     }
     // 使用插件加载器加载插件
-    loadPlugin = async (name: string) => {
+    loadPlugin = async (name: string, register = true) => {
         const module = await this.#opt.pluginLoader(name)
-        await this.addPlugin(name, module)
+        await this.addPlugin(name, module, register)
     }
     // 直接添加插件
-    addPlugin = async (name: string, plugin: Plugin) => {
+    addPlugin = async (name: string, plugin: Plugin, register = true) => {
         const prefix = name + "__"
         await plugin({
             addFunc: async (...funcs) => {
@@ -83,7 +84,7 @@ export class ModelSession {
                 this.#ansAnsHook.set(name, hook)
             }
         })
-        await this.#opt.pluginManager.add(name)
+        if (register) await this.#opt.pluginManager.add(name)
     }
     // 移除插件
     removePlugin = async (name: string) => {
