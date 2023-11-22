@@ -9,7 +9,7 @@ export class FunctionManager {
         this.#store = new Map<string, MFunc>()
         this.#funcs = new Map<string, z.infer<z.ZodFunction<any, any>>>()
     }
-    get funcsIter() { return this.#store.values() as Iterable<MFunc> | AsyncIterable<MFunc> }
+    listFunc = (): Iterable<MFunc> | AsyncIterable<MFunc> => this.#store.values()
     addFunc: <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(...funcs: FuncInput<Args, Returns>[]) => void | Promise<void> = (...funcs) => {
         funcs.map(func => {
             this.#store.set(func.name, mkFunc(func))

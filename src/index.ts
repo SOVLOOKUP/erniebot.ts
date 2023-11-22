@@ -50,7 +50,7 @@ export class ModelSession {
         // 获取 token
         const token = await this.#opt.tokenManager.get(this.#opt.key)
         // 获取 funcs
-        const funcs = await collect(this.#opt.functionManager.funcsIter)
+        const funcs = await collect(this.#opt.functionManager.listFunc())
         // 发送问题
         if (token) {
             if (funcs.length > 0) {
@@ -77,7 +77,7 @@ export class ModelSession {
             },
             delFunc: async (name) => await this.#opt.functionManager.delFunc(prefix + name),
             funcsIter: (() => {
-                const mine = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.funcsIter)
+                const mine = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.listFunc())
                 return map((chunk) => { chunk.name = chunk.name.replace(prefix, ""); return chunk }, mine)
             })(),
             setAskAnsHook: (hook) => {
@@ -89,7 +89,7 @@ export class ModelSession {
     // 移除插件
     removePlugin = async (name: string) => {
         const prefix = name + "__"
-        const funcsIter = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.funcsIter)
+        const funcsIter = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.listFunc())
         await consume(map((chunk) => { this.#opt.functionManager.delFunc(chunk.name) }, funcsIter))
         if (this.#ansAnsHook.has(name)) {
             this.#ansAnsHook.delete(name)
