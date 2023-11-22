@@ -1,4 +1,4 @@
-import  { type Plugin, z } from "../src";
+import { type Plugin, z } from "../src";
 
 const plugin: Plugin = async ({ addFunc, setAskAnsHook }) => {
     console.log("文心一言测试插件");
@@ -21,11 +21,19 @@ const plugin: Plugin = async ({ addFunc, setAskAnsHook }) => {
                     output: { names: ["小雨"] }
                 }
             ]
-        },
+        }
+    )
+    await addFunc(
         {
             name: "exit",
             description: "退出对话，结束对话，终止对话。用户在说“拜拜”、“再见”等词时调用",
-            func: () => process.exit()
+            func: () => {
+                if (window !== undefined) {
+                    alert("来自 DEMO 插件: 再见！")
+                } else {
+                    process.exit()
+                }
+            }
         }
     )
 }

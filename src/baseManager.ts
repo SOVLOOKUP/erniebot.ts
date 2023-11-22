@@ -10,11 +10,9 @@ export class FunctionManager {
         this.#funcs = new Map<string, z.infer<z.ZodFunction<any, any>>>()
     }
     listFunc = (): Iterable<MFunc> | AsyncIterable<MFunc> => this.#store.values()
-    addFunc: <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(...funcs: FuncInput<Args, Returns>[]) => void | Promise<void> = (...funcs) => {
-        funcs.map(func => {
-            this.#store.set(func.name, mkFunc(func))
-            this.#funcs.set(func.name, func.func)
-        })
+    addFunc: <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }> | z.ZodVoid>(func: FuncInput<Args, Returns>) => void | Promise<void> = (func) => {
+        this.#store.set(func.name, mkFunc(func))
+        this.#funcs.set(func.name, func.func)
     }
     delFunc: (name: string) => boolean | Promise<boolean> = (name) => {
         return this.#store.delete(name) && this.#funcs.delete(name)

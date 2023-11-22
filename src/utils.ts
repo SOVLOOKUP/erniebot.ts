@@ -3,7 +3,7 @@ import { zodToJsonSchema } from "zod-to-json-schema"
 import { FuncInput, Json, MFunc, ModelRes, Msg, msg } from "./types"
 import { flatten, map } from 'streaming-iterables';
 
-export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>>(func: FuncInput<Args, Returns>) => {
+export const mkFunc = <Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }> | z.ZodVoid>(func: FuncInput<Args, Returns>) => {
     func.input = func.input ?? z.object({}) as Args
     const res = {
         name: func.name,

@@ -72,14 +72,15 @@ export class ModelSession {
     addPlugin = async (name: string, plugin: Plugin, register = true) => {
         const prefix = name + "__"
         await plugin({
-            addFunc: async (...funcs) => {
-                await this.#opt.functionManager.addFunc(...funcs.map(func => { func.name = prefix + func.name; return func; }));
+            addFunc: async (func) => {
+                func.name = prefix + func.name
+                await this.#opt.functionManager.addFunc(func);
             },
             delFunc: async (name) => await this.#opt.functionManager.delFunc(prefix + name),
-            funcsIter: (() => {
+            listFunc: () => {
                 const mine = filter((chunk) => chunk.name.startsWith(prefix), this.#opt.functionManager.listFunc())
                 return map((chunk) => { chunk.name = chunk.name.replace(prefix, ""); return chunk }, mine)
-            })(),
+            },
             setAskAnsHook: (hook) => {
                 this.#ansAnsHook.set(name, hook)
             }

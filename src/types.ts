@@ -33,7 +33,7 @@ export type Plugin = (opt: {
   // 删除可调用函数
   delFunc: FunctionManager['delFunc'],
   // 查询可调用函数
-  funcsIter: FunctionManager['funcsIter'],
+  listFunc: FunctionManager['listFunc'],
   // 设置对话后 HOOK
   setAskAnsHook: (hook: AskAnsHook) => void | Promise<void>,
 }) => void | Promise<void>
@@ -95,7 +95,7 @@ export interface ModelRes {
   }
 }
 
-export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>> {
+export interface FuncInput<Args extends z.ZodObject<{ [key: string]: z.ZodType<Json> }>, Returns extends z.ZodObject<{ [key: string]: z.ZodType<Json> }> | z.ZodVoid> {
   name: string
   description: string
   input?: Args
