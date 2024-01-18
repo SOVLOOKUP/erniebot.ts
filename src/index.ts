@@ -3,6 +3,7 @@ import { collect, filter, consume, map } from 'streaming-iterables';
 import { ModelRes, modelMsg, Msg, userMsg, funcMsg, ModelReturn, Opt, AskAnsHook, Plugin, PkgInfo } from "./types"
 import { sendAsk } from './utils';
 import { FunctionManager, PluginManager, TokenManager } from "./baseManager"
+import { embedding } from './embedding';
 export { z }
 
 export class ModelSession {
@@ -44,25 +45,29 @@ export class ModelSession {
         await Promise.all(installPlugins)
         return this
     }
+    // 获取有效 token
+    #getToken = async () => {
+        const token = await this.#opt.tokenManager.get(this.#opt.key)
+        if (token) { return token } else {
+            throw new Error("不能使用未登录或已删除的账号 Token 发起会话，请先登录！")
+        }
+    }
     #sendAsk = async (ctx?: Msg[]) => {
         let res: AsyncIterable<ModelRes>
         const context = ctx ?? this.#context
-        // 获取 token
-        const token = await this.#opt.tokenManager.get(this.#opt.key)
+        const token = await this.#getToken()
         // 获取 funcs
         const funcs = await collect(this.#opt.functionManager.listFunc())
         // 发送问题
-        if (token) {
-            if (funcs.length > 0) {
-                res = await this.#opt.sendAsk(token, context, funcs, this.#opt.proModel)
-            } else {
-                res = await this.#opt.sendAsk(token, context, undefined, this.#opt.proModel)
-            }
+        if (funcs.length > 0) {
+            res = await this.#opt.sendAsk(token, context, funcs, this.#opt.proModel)
         } else {
-            throw new Error("不能使用未登录或已删除的账号 Token 发起会话，请先登录！")
+            res = await this.#opt.sendAsk(token, context, undefined, this.#opt.proModel)
         }
         return res
     }
+    // 使用 Embedding 服务
+    embedding = async (input: string) => await embedding(await this.#getToken(), input)
     // 使用插件加载器加载插件
     loadPlugin = async (name: string, register = true) => {
         const module = await this.#opt.pluginLoader(name)

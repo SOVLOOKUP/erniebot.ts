@@ -31,7 +31,9 @@ export const sendAsk = async (token: string, msgs: z.infer<typeof msg>[], funcs?
             stream: true
         }),
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-bce-date": (new Date()).toISOString()
+            // todo 计算 Authorization https://cloud.baidu.com/doc/Reference/s/hjwvz1y4f
         }
     })
     // 解码器
